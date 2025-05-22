@@ -326,6 +326,12 @@ fn parse_coverage_mapping<'data, R: ReadRef<'data>>(
     }
 }
 
+// Strictly speaking, parsing __llvm_covfun ought to depend on the version number
+// observed in the __llvm_covmap headers.
+//
+// But in practice there haven’t been any non-additive changes to the covfun format
+// in a long time, which is why you can get away with parsing them independently,
+// at least for now.
 fn parse_coverage_functions<'data, R: ReadRef<'data>>(
     endian: Endianness,
     section: &Section<'data, '_, R>,
