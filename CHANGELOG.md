@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Basic MC/DC parsing in object files
+- llvm 21 into tests
 
 ## [0.8.3]
 ### Changed

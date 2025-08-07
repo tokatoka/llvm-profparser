@@ -1,7 +1,7 @@
 use std::{env, process::Command};
 
 fn main() {
-    for i in 11..21 {
+    for i in 11..22 {
         println!("cargo::rustc-check-cfg=cfg(llvm_{})", i)
     }
     let rustc = env::var("RUSTC").unwrap();
