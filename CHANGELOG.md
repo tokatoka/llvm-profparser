@@ -4,10 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0]
 ### Added
 - Basic MC/DC parsing in object files
 - llvm 21 into tests
+
+### Changed
+- Removed build script so there's no longer cfgs for the LLVM version compiled against
 
 ### Fixed
 - Non-version number flags in version field weren't masked out when using version for indexed profile parsing of causing parse errors.
