@@ -7,6 +7,7 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
+use tracing::trace;
 
 pub mod indexed_profile;
 pub mod raw_profile;
@@ -43,8 +44,7 @@ pub fn parse_bytes(data: &[u8]) -> io::Result<InstrumentationProfile> {
         ));
     };
     nom_res.map(|(_bytes, res)| res).map_err(|_e| {
-        #[cfg(test)]
-        println!("{}", _e);
+        trace!("{}", _e);
         io::Error::new(io::ErrorKind::Other, "Parsing failed")
     })
 }
