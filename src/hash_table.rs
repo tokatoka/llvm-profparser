@@ -58,7 +58,6 @@ fn read_value(
     }
     let mut result = vec![];
     let end_len = input.len() - data_len;
-    tracing::trace!("input: {} end: {}", input.len(), end_len);
 
     let expected_end = &input[data_len..];
     let mut last_hash = 0;
@@ -72,9 +71,7 @@ fn read_value(
         }
         // This is only available for versions > v1. But as rust won't be going backwards to legacy
         // versions it's a safe assumption.
-        tracing::trace!("1. le_u64: {}", bytes.len());
         let (bytes, counts_len) = le_u64(bytes)?;
-        tracing::trace!("Counts len: {}", counts_len);
         if bytes.len() <= end_len {
             break;
         }
@@ -87,7 +84,6 @@ fn read_value(
             return Err(nom::Err::Failure(VerboseError { errors }));
         }
         for _ in 0..counts_len {
-            // tracing::trace!("2. le_u64: {}", input.len());
             let (bytes, count) = le_u64(input)?;
             input = bytes;
             counts.push(count);
@@ -99,7 +95,6 @@ fn read_value(
 
         // If the version is > v2 then there can also be value profiling data so lets try and parse
         // that now
-        tracing::trace!("3. le_u32: {}", input.len());
         let (bytes, total_size) = le_u32(input)?;
         if bytes.len() <= end_len {
             break;
