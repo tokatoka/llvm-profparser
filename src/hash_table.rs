@@ -88,7 +88,15 @@ fn read_value(
             input = bytes;
             counts.push(count);
         }
-        result.push((hash, InstrProfRecord { counts, data: None }));
+        result.push((
+            hash,
+            InstrProfRecord {
+                counts,
+                counts_bytes_offset: core::ops::Range::default(),
+                zero: false,
+                data: None,
+            },
+        ));
         if input.len() <= end_len {
             break;
         }

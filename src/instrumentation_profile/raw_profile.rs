@@ -211,6 +211,7 @@ where
         data: &ProfileData<T>,
         counter_offset: i64,
         mut bytes: &'a [u8],
+        initial: &[u8],
     ) -> ParseResult<'a, InstrProfRecord> {
         let max_counters = header.max_counters_len();
         // From LLVM coverage mapping version 8 relative counter offsets are allowed which can be
@@ -247,6 +248,7 @@ where
             )))
         } else {
             let mut counts = Vec::<u64>::with_capacity(data.num_counters as usize);
+            let bytes_before = bytes;
             bytes = &bytes[(counter_offset as usize)..];
             for _ in 0..(data.num_counters as usize) {
                 let counter = if header.has_byte_coverage() {
@@ -260,8 +262,14 @@ where
                 };
                 counts.push(counter);
             }
+            let bytes_after = bytes;
+            let byte_range = core::ops::Range {
+                start: unsafe { bytes_before.as_ptr().offset_from(initial.as_ptr()) },
+                end: unsafe { bytes_after.as_ptr().offset_from(initial.as_ptr()) },
+            };
             let record = InstrProfRecord {
                 counts,
+                counts_bytes_offset: byte_range,
                 ..Default::default()
             };
             Ok((bytes, record))
@@ -293,6 +301,7 @@ where
     type Header = Header;
 
     fn parse_bytes(mut input: &[u8]) -> ParseResult<'_, InstrumentationProfile> {
+        let initial = input;
         if !input.is_empty() {
             let mut result = InstrumentationProfile::default();
             let (bytes, header) = Self::parse_header(input)?;
@@ -353,7 +362,8 @@ where
                 } else {
                     0
                 };
-                let (bytes, record) = Self::read_raw_counts(&header, data, counters_offset, input)?;
+                let (bytes, record) =
+                    Self::read_raw_counts(&header, data, counters_offset, input, initial)?;
                 debug!("Read counter record {:?}", record);
                 total_offset +=
                     counters_offset + (record.counts.len() * header.counter_size()) as i64;
@@ -385,6 +395,7 @@ where
             let padding = get_num_padding_bytes(header.names_len);
             let (bytes, _) = take(padding)(input)?;
             input = bytes;
+
             for (data, mut record) in data_section.iter().zip(counters.drain(..)) {
                 let (bytes, _) =
                     Self::read_value_profiling_data(&header, data, input, &mut record)?;

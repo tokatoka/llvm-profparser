@@ -1,3 +1,4 @@
+use core::ops::Range;
 use nom::number::Endianness;
 use rustc_hash::FxHashMap;
 use std::cmp::Ordering;
@@ -257,7 +258,7 @@ impl InstrumentationProfile {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Hash)]
 pub struct NamedInstrProfRecord {
     pub name: Option<String>,
     pub name_hash: Option<u64>,
@@ -302,10 +303,12 @@ impl NamedInstrProfRecord {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Hash)]
 pub struct InstrProfRecord {
     pub counts: Vec<u64>,
     pub data: Option<Box<ValueProfDataRecord>>,
+    pub zero: bool,
+    pub counts_bytes_offset: Range<isize>,
 }
 
 impl InstrProfRecord {
@@ -313,12 +316,12 @@ impl InstrProfRecord {
         if self.counts.len() != other.counts.len() {
             return;
         }
-        for (own, other) in self.counts.iter_mut().zip(other.counts.iter()) {
-            let res = own.checked_add(*other);
-            *own = match res {
-                Some(s) => s,
-                None => u64::MAX, // TODO handle the warnings?
-            };
+        for (own, other_count) in self.counts.iter_mut().zip(other.counts.iter()) {
+            let set_to_null = *own == *other_count;
+
+            if set_to_null {
+                self.zero = true;
+            }
         }
         // TODO merge the data
         if let Some((own, other)) = self.data.as_mut().zip(other.data.as_ref()) {

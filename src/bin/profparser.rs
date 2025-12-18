@@ -5,6 +5,9 @@ use llvm_profparser::instrumentation_profile::types::*;
 use llvm_profparser::*;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::fs::{File, OpenOptions};
+use std::io::{self, Write};
+use std::io::{Seek, SeekFrom};
 use std::path::PathBuf;
 use tracing_subscriber::filter::filter_fn;
 use tracing_subscriber::{Layer, Registry};
@@ -333,14 +336,41 @@ impl ShowCommand {
 }
 
 impl MergeCommand {
+    fn zero_ranges(
+        src: &PathBuf,
+        dst: &PathBuf,
+        records: &[NamedInstrProfRecord],
+    ) -> std::io::Result<()> {
+        {
+            let mut src_file = File::open(&src)?;
+            let mut dst_file = File::create(&dst)?;
+            io::copy(&mut src_file, &mut dst_file)?;
+        }
+
+        let mut file = OpenOptions::new().read(true).write(true).open(&dst)?;
+
+        for r in records {
+            let record = &r.record;
+            if record.zero {
+                let start = record.counts_bytes_offset.start;
+                let len = record.counts_bytes_offset.len();
+                if len == 0 {
+                    continue;
+                }
+                file.seek(SeekFrom::Start(start as u64))?;
+                file.write_all(&vec![0; len])?;
+            }
+        }
+        Ok(())
+    }
+
     fn run(&self) -> Result<()> {
         assert!(
             !self.input.is_empty(),
             "No input files selected. See merge --help"
         );
         let profile = merge_profiles(&self.input)?;
-        // Now to write it out?
-        println!("{:#?}", profile);
+        Self::zero_ranges(&self.input[0], &self.output, profile.records())?;
         Ok(())
     }
 }

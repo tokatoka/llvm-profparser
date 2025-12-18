@@ -232,6 +232,8 @@ impl InstrProfReader for TextInstrProf {
             let (bytes, data) = read_value_profile_data(input)?;
             let record = InstrProfRecord {
                 counts: counters,
+                zero: false,
+                counts_bytes_offset: core::ops::Range::default(),
                 data,
             };
             let name = std::str::from_utf8(name).map(|x| x.to_string()).ok();
